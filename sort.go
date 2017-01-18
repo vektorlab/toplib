@@ -1,55 +1,48 @@
-package main
+package ctop
 
-import (
-	"sort"
-)
+import "sort"
 
-var SortFields = []string{"id", "name", "cpu", "mem", "mem %"}
+type By func(*Sample, *Sample) bool
 
-// Sort array of containers by field
-func SortContainers(field string, containers []*Container) {
-	switch field {
-	case "id":
-		sort.Sort(ByID(containers))
-	case "name":
-		sort.Sort(ByName(containers))
-	case "cpu":
-		sort.Sort(sort.Reverse(ByCPU(containers)))
-	case "mem":
-		sort.Sort(sort.Reverse(ByMem(containers)))
-	case "mem %":
-		sort.Sort(sort.Reverse(ByMemPercent(containers)))
-	default:
-		sort.Sort(ByID(containers))
+func (by By) Sort(samples []*Sample, reverse bool) {
+	s := &sorter{
+		samples: samples,
+		by:      by,
+	}
+	if reverse {
+		sort.Sort(sort.Reverse(s))
+	} else {
+		sort.Sort(s)
 	}
 }
 
-type ByID []*Container
+type sorter struct {
+	samples []*Sample
+	by      func(s1, s2 *Sample) bool
+}
 
-func (a ByID) Len() int           { return len(a) }
-func (a ByID) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByID) Less(i, j int) bool { return a[i].id < a[j].id }
+func (s *sorter) Len() int           { return len(s.samples) }
+func (s *sorter) Swap(i, j int)      { s.samples[i], s.samples[j] = s.samples[j], s.samples[i] }
+func (s *sorter) Less(i, j int) bool { return s.by(s.samples[i], s.samples[j]) }
 
-type ByName []*Container
-
-func (a ByName) Len() int           { return len(a) }
-func (a ByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByName) Less(i, j int) bool { return a[i].name < a[j].name }
-
-type ByCPU []*Container
-
-func (a ByCPU) Len() int           { return len(a) }
-func (a ByCPU) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByCPU) Less(i, j int) bool { return a[i].reader.CPUUtil < a[j].reader.CPUUtil }
-
-type ByMem []*Container
-
-func (a ByMem) Len() int           { return len(a) }
-func (a ByMem) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByMem) Less(i, j int) bool { return a[i].reader.MemUsage < a[j].reader.MemUsage }
-
-type ByMemPercent []*Container
-
-func (a ByMemPercent) Len() int           { return len(a) }
-func (a ByMemPercent) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByMemPercent) Less(i, j int) bool { return a[i].reader.MemPercent < a[j].reader.MemPercent }
+func Sort(n string, samples []*Sample) {
+	var (
+		fn      By
+		reverse bool
+	)
+	if len(samples) == 0 {
+		return
+	}
+	if _, ok := samples[0].strings[n]; ok {
+		fn = func(i, j *Sample) bool {
+			return i.GetString(n) < j.GetString(n)
+		}
+	}
+	if _, ok := samples[0].floats[n]; ok {
+		reverse = true
+		fn = func(i, j *Sample) bool {
+			return i.GetFloat64(n) < j.GetFloat64(n)
+		}
+	}
+	By(fn).Sort(samples, reverse)
+}

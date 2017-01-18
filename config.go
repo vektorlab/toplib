@@ -1,9 +1,7 @@
-package main
+package ctop
 
-import (
-	"os"
-)
-
+/*
+TODO: Why was this a channel?
 var GlobalConfig = NewDefaultConfig()
 var configChan = make(chan ConfigMsg)
 
@@ -35,3 +33,4 @@ func NewDefaultConfig() Config {
 	}()
 	return config
 }
+*/

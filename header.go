@@ -1,4 +1,4 @@
-package widgets
+package ctop
 
 import (
 	"fmt"
@@ -7,28 +7,28 @@ import (
 	ui "github.com/gizak/termui"
 )
 
-type CTopHeader struct {
+type Header struct {
 	Time  *ui.Par
 	Count *ui.Par
 }
 
-func NewCTopHeader() *CTopHeader {
-	return &CTopHeader{
+func NewHeader() *Header {
+	return &Header{
 		Time:  headerPar(timeStr()),
 		Count: headerPar("-"),
 	}
 }
 
-func (c *CTopHeader) Row() *ui.Row {
-	c.Time.Text = timeStr()
+func (h *Header) Row() *ui.Row {
+	h.Time.Text = timeStr()
 	return ui.NewRow(
-		ui.NewCol(2, 0, c.Time),
-		ui.NewCol(2, 0, c.Count),
+		ui.NewCol(2, 0, h.Time),
+		ui.NewCol(2, 0, h.Count),
 	)
 }
 
-func (c *CTopHeader) SetCount(val int) {
-	c.Count.Text = fmt.Sprintf("%d containers", val)
+func (c *Header) SetCount(val int) {
+	c.Count.Text = fmt.Sprintf("%d samples", val)
 }
 
 func timeStr() string {
@@ -40,8 +40,8 @@ func headerPar(s string) *ui.Par {
 	p.Border = false
 	p.Height = 1
 	p.Width = 20
-	p.TextFgColor = ui.ColorDefault
-	p.TextBgColor = ui.ColorWhite
-	p.Bg = ui.ColorWhite
+	//p.TextFgColor = ui.ColorDefault
+	//p.TextBgColor = ui.ColorWhite
+	//p.Bg = ui.ColorWhite
 	return p
 }
