@@ -11,7 +11,7 @@ import (
 
 	"github.com/fsouza/go-dockerclient"
 	ui "github.com/gizak/termui"
-	"github.com/kevinschoon/ctop"
+	ctop "github.com/vektorlab/toplib"
 )
 
 type Container struct {

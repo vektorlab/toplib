@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 	ui "github.com/gizak/termui"
-	"github.com/kevinschoon/ctop"
+	ctop "github.com/vektorlab/toplib"
 	"math/rand"
 	"os"
 	"time"

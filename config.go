@@ -1,4 +1,4 @@
-package ctop
+package toplib
 
 /*
 TODO: Why was this a channel?

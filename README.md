@@ -1,4 +1,4 @@
-# ctop
+# ctoplib
 
 High level library for creating top-like curses interfaces.
 

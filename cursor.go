@@ -1,4 +1,4 @@
-package ctop
+package toplib
 
 // Cursor stores the currently selected Sample
 type Cursor struct {

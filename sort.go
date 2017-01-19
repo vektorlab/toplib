@@ -1,4 +1,4 @@
-package ctop
+package toplib
 
 import "sort"
 
