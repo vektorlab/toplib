@@ -155,6 +155,7 @@ func main() {
 		top.Recorder.SortField = sortMenu.Up()
 		top.Render()
 	}
+
 	sortView.Handlers["/sys/kbd/<down>"] = func(ui.Event) {
 		top.Recorder.SortField = sortMenu.Down()
 		top.Render()

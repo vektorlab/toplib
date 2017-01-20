@@ -51,7 +51,7 @@ func (t *Table) Buffers(r *Recorder, c *Cursor) []ui.GridBufferer {
 	}
 	table := ui.NewTable()
 	table.Rows = rows
-	table.Seperator = false
+	table.Separator = false
 	table.Border = false
 	table.SetSize()
 	table.Analysis()

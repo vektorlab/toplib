@@ -1,0 +1,8 @@
+package: github.com/vektorlab/toplib
+import:
+- package: github.com/fsouza/go-dockerclient
+- package: github.com/gizak/termui
+testImport:
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
