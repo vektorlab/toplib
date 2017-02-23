@@ -1,55 +1,8 @@
 package toplib
 
 import (
-	"fmt"
 	ui "github.com/gizak/termui"
 )
-
-type Toggle struct {
-	Name  string
-	state bool
-}
-
-func (t *Toggle) Toggle() bool {
-	t.state = t.state == false
-	return t.state
-}
-
-func (t *Toggle) Off() {
-	t.state = false
-}
-
-type Toggles []*Toggle
-
-func NewToggles(toggles ...*Toggle) Toggles {
-	return Toggles(toggles)
-}
-
-func (toggles Toggles) Toggle(name string, exclusive bool) (state bool) {
-	for _, toggle := range toggles {
-		if toggle.Name == name {
-			state = toggle.Toggle()
-		}
-		if exclusive && toggle.Name != name {
-			toggle.Off()
-		}
-	}
-	return state
-}
-
-func (toggles Toggles) Buffers() []ui.GridBufferer {
-	str := ""
-	for _, toggle := range toggles {
-		if toggle.state {
-			str += fmt.Sprintf(" [%s](fg-red)", toggle.Name)
-		} else {
-			str += fmt.Sprintf(" %s", toggle.Name)
-		}
-	}
-	par := ui.NewPar(str)
-	par.Height = 3
-	return []ui.GridBufferer{par}
-}
 
 var (
 	padding  = 2
@@ -76,8 +29,6 @@ func NewMenu(items ...string) *Menu {
 		CursorPos:   0,
 		Handlers:    make(map[string]func(ui.Event)),
 	}
-	//m.Handlers["/sys/kbd/<up>"] = m.Up
-	//m.Handlers["/sys/kbd/<down>"] = m.Down
 	m.Width, m.Height = calcSize(items)
 	return m
 }

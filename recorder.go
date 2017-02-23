@@ -56,6 +56,14 @@ func (r *Recorder) HistString(id, field string) []string {
 	return values
 }
 
+func (r *Recorder) Items() []Item {
+	items := []Item{}
+	for _, sample := range r.Samples() {
+		items = append(items, sample)
+	}
+	return items
+}
+
 func (r *Recorder) Samples() []*Sample {
 	r.mu.Lock()
 	defer r.mu.Unlock()

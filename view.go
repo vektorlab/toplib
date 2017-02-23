@@ -1,8 +1,10 @@
 package toplib
 
+/*
 import (
 	ui "github.com/gizak/termui"
 )
+
 
 type View struct {
 	rowFn    func() []*ui.Row
@@ -43,3 +45,4 @@ func (v ViewMap) Get() *View {
 	}
 	return nil
 }
+*/

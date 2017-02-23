@@ -1,14 +1,47 @@
 package toplib
 
 import (
-	"fmt"
 	ui "github.com/gizak/termui"
-	"strconv"
+	"strings"
 )
 
-type Section interface {
-	Buffers(*Recorder, *Cursor) []ui.GridBufferer
+type ToggleMenu struct {
+	ui.Block
+	ToggleFgColor ui.Attribute
+	ToggleBgColor ui.Attribute
+	Toggles       Toggles
 }
+
+func NewToggleMenu(toggles Toggles) *ToggleMenu {
+	return &ToggleMenu{
+		Toggles:       toggles,
+		ToggleFgColor: ui.ThemeAttr("list.item.fg"),
+		ToggleBgColor: ui.ThemeAttr("list.item.bg"),
+	}
+}
+
+func (tm *ToggleMenu) names() []string {
+	names := []string{}
+	for _, toggle := range tm.Toggles {
+		names = append(names, toggle.Name)
+	}
+	return names
+}
+
+func (tm *ToggleMenu) Buffer() ui.Buffer {
+	buf := tm.Block.Buffer()
+	cs := ui.DefaultTxBuilder.Build(strings.Join(tm.names(), "\n"), tm.ToggleFgColor, tm.ToggleBgColor)
+	i, j := 0, 0
+	for i < len(cs) {
+		if cs[j].Ch == '\n' {
+
+		}
+	}
+
+	return buf
+}
+
+/*
 
 type Gauges struct {
 	Fields []string
@@ -19,7 +52,7 @@ func NewGauges(fields ...string) *Gauges {
 }
 
 func (g *Gauges) Buffers(r *Recorder, c *Cursor) []ui.GridBufferer {
-	samples := r.Samples()
+	samples := fromSamples(r.Samples())
 	sample := samples[c.IDX(samples)]
 	gauges := make([]ui.GridBufferer, len(g.Fields))
 	for i, field := range g.Fields {
@@ -59,10 +92,23 @@ func (t *Table) Buffers(r *Recorder, c *Cursor) []ui.GridBufferer {
 	return []ui.GridBufferer{table}
 }
 
-type Summary struct{}
+type Summary struct {
+	ui.Par
+	count int
+}
 
 func NewSummary() *Summary {
-	return &Summary{}
+	s := &Summary{}
+	s.Height = 3
+	s.Width = 50
+	s.BorderLabel = "CTop Summary"
+	s.TextFgColor = ui.ColorWhite
+	s.BorderFg = ui.ColorCyan
+	return s
+}
+
+func (s *Summary) Update(t *Top) {
+	s.Text = fmt.Sprintf("Samples collected: %d", s.count)
 }
 
 func (s *Summary) Buffers(r *Recorder, _ *Cursor) []ui.GridBufferer {
@@ -186,3 +232,5 @@ func slimGauge() *ui.Gauge {
 	g.Label = "-"
 	return g
 }
+
+*/

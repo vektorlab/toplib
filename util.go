@@ -2,6 +2,7 @@ package toplib
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	ui "github.com/gizak/termui"
@@ -51,4 +52,13 @@ func colorScale(n int) ui.Attribute {
 		return ui.ColorYellow
 	}
 	return ui.ColorGreen
+}
+
+func listHandlers() []string {
+	strs := []string{}
+	for path, _ := range ui.DefaultEvtStream.Handlers {
+		strs = append(strs, path)
+	}
+	sort.Strings(strs)
+	return strs
 }

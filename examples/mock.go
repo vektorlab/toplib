@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	ui "github.com/gizak/termui"
 	ctop "github.com/vektorlab/toplib"
 	"math/rand"
 	"os"
@@ -54,119 +53,13 @@ func (m *MockSource) Collect() []*ctop.Sample {
 
 func main() {
 	source := &MockSource{}
-	top := ctop.NewTop()
-	var (
-		cursor  = ctop.NewCursor()
-		toggles = ctop.NewToggles(
-			&ctop.Toggle{Name: "sort"},
-			&ctop.Toggle{Name: "expanded"},
-		)
-		sortMenu  = ctop.NewMenu("ID", "CPU", "MEM", "DISK", "GPU")
-		gauges    = ctop.NewGauges("CPU", "MEM", "DISK")
-		summary   = ctop.NewSummary()
-		chartCPU  = ctop.NewChart("CPU")
-		chartMem  = ctop.NewChart("MEM")
-		chartDisk = ctop.NewChart("DISK")
-		chartGPU  = ctop.NewChart("GPU")
-		table     = ctop.NewTable("ID", "CPU", "MEM",
-			"DISK", "GPU", "THING", "OTHER THING")
-	)
-
-	defaultView := ctop.NewView(func() []*ui.Row {
-		return []*ui.Row{
-			ctop.NewHeader().Row(),
-			// Top two sections
-			ui.NewRow(
-				ui.NewCol(6, 0, gauges.Buffers(top.Recorder, cursor)...),
-				ui.NewCol(6, 0, summary.Buffers(top.Recorder, cursor)...),
-			),
-			// Main section
-			ui.NewRow(
-				ui.NewCol(12, 0, table.Buffers(top.Recorder, cursor)...),
-			),
-			// Bottom toggles
-			ui.NewRow(
-				ui.NewCol(12, 0, toggles.Buffers()...),
-			),
-		}
-	})
-
-	defaultView.Handlers["/sys/kbd/<up>"] = func(ui.Event) {
-		if cursor.Up(top.Recorder.Samples()) {
-			top.Render()
-		}
+	sections := []ctop.Section{
+		ctop.NewSamplesSection("ID", "CPU", "MEM", "DISK", "GPU", "THING", "OTHER THING"),
+		ctop.NewDebugSection(),
 	}
 
-	defaultView.Handlers["/sys/kbd/<down>"] = func(ui.Event) {
-		if cursor.Down(top.Recorder.Samples()) {
-			top.Render()
-		}
-	}
-
-	defaultView.Handlers["/sys/kbd/s"] = func(ui.Event) {
-		if toggles.Toggle("sort", true) {
-			top.Views.Set("sort")
-		} else {
-			top.Views.Set("default")
-		}
-		top.Render()
-	}
-
-	defaultView.Handlers["/sys/kbd/x"] = func(ui.Event) {
-		if toggles.Toggle("expanded", true) {
-			top.Views.Set("expanded")
-		} else {
-			top.Views.Set("default")
-		}
-		top.Render()
-	}
-
-	expandedView := ctop.NewView(func() []*ui.Row {
-		return []*ui.Row{
-			ui.NewRow(
-				ui.NewCol(3, 0, chartCPU.Buffers(top.Recorder, cursor)...),
-				ui.NewCol(3, 0, chartMem.Buffers(top.Recorder, cursor)...),
-				ui.NewCol(3, 0, chartDisk.Buffers(top.Recorder, cursor)...),
-				ui.NewCol(3, 0, chartGPU.Buffers(top.Recorder, cursor)...),
-			),
-			ui.NewRow(
-				ui.NewCol(12, 0, toggles.Buffers()...),
-			),
-		}
-	})
-
-	sortView := ctop.NewView(func() []*ui.Row {
-		return []*ui.Row{
-			ui.NewRow(
-				ui.NewCol(6, 0, gauges.Buffers(top.Recorder, cursor)...),
-				ui.NewCol(6, 0, summary.Buffers(top.Recorder, cursor)...),
-			),
-			ui.NewRow(
-				ui.NewCol(3, 0, sortMenu),
-				ui.NewCol(9, 0, table.Buffers(top.Recorder, cursor)...),
-			),
-			ui.NewRow(
-				ui.NewCol(12, 0, toggles.Buffers()...),
-			),
-		}
-	})
-
-	sortView.Handlers["/sys/kbd/<up>"] = func(ui.Event) {
-		top.Recorder.SortField = sortMenu.Up()
-		top.Render()
-	}
-
-	sortView.Handlers["/sys/kbd/<down>"] = func(ui.Event) {
-		top.Recorder.SortField = sortMenu.Down()
-		top.Render()
-	}
-
-	top.Views.Add("default", defaultView)
-	top.Views.Add("sort", sortView)
-	top.Views.Add("expanded", expandedView)
-	top.Views.Set("default")
-
-	tick := time.NewTicker(100 * time.Millisecond)
+	top := ctop.NewTop(sections)
+	tick := time.NewTicker(500 * time.Millisecond)
 
 	go func() {
 	loop:
