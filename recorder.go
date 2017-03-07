@@ -1,35 +1,39 @@
 package toplib
 
-import "sync"
+import (
+	"github.com/vektorlab/toplib/sample"
+	"sync"
+)
 
 const MaxSamples = 350
 
+// Recorder saves recorded samples
 type Recorder struct {
 	SortField string
-	samples   map[string][]*Sample
+	samples   map[string][]*sample.Sample
 	Counter   int
-	latest    []*Sample
+	latest    []*sample.Sample
 	mu        sync.RWMutex
 }
 
 func NewRecorder() *Recorder {
 	return &Recorder{
 		SortField: "ID",
-		samples:   map[string][]*Sample{},
-		latest:    []*Sample{},
+		samples:   map[string][]*sample.Sample{},
+		latest:    []*sample.Sample{},
 	}
 }
 
-func (r *Recorder) store(sample *Sample) {
-	if samples, ok := r.samples[sample.ID()]; !ok {
-		r.samples[sample.ID()] = []*Sample{}
+func (r *Recorder) store(s *sample.Sample) {
+	if samples, ok := r.samples[s.ID()]; !ok {
+		r.samples[s.ID()] = []*sample.Sample{}
 	} else {
 		if len(samples) >= MaxSamples {
 			//Pop
-			r.samples[sample.ID()] = samples[1:]
+			r.samples[s.ID()] = samples[1:]
 		}
 	}
-	r.samples[sample.ID()] = append(r.samples[sample.ID()], sample)
+	r.samples[s.ID()] = append(r.samples[s.ID()], s)
 }
 
 func (r *Recorder) HistFloat64(id, field string) []float64 {
@@ -37,8 +41,8 @@ func (r *Recorder) HistFloat64(id, field string) []float64 {
 	defer r.mu.Unlock()
 	values := []float64{}
 	if samples, ok := r.samples[id]; ok {
-		for _, sample := range samples {
-			values = append(values, sample.GetFloat64(field))
+		for _, s := range samples {
+			values = append(values, s.GetFloat64(field))
 		}
 	}
 	return values
@@ -49,8 +53,8 @@ func (r *Recorder) HistString(id, field string) []string {
 	defer r.mu.Unlock()
 	values := []string{}
 	if samples, ok := r.samples[id]; ok {
-		for _, sample := range samples {
-			values = append(values, sample.GetString(field))
+		for _, s := range samples {
+			values = append(values, s.GetString(field))
 		}
 	}
 	return values
@@ -64,19 +68,19 @@ func (r *Recorder) Items() []Item {
 	return items
 }
 
-func (r *Recorder) Samples() []*Sample {
+func (r *Recorder) Samples() []*sample.Sample {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	Sort(r.SortField, r.latest)
+	sample.Sort(r.SortField, r.latest)
 	return r.latest
 }
 
-func (r *Recorder) Load(samples []*Sample) {
+func (r *Recorder) Load(samples []*sample.Sample) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.latest = samples
-	for _, sample := range r.latest {
-		r.store(sample)
+	for _, s := range r.latest {
+		r.store(s)
 		r.Counter++
 	}
 }

@@ -4,7 +4,9 @@ package main
 
 import (
 	"fmt"
-	ctop "github.com/vektorlab/toplib"
+	"github.com/vektorlab/toplib"
+	"github.com/vektorlab/toplib/sample"
+	"github.com/vektorlab/toplib/section"
 	"math/rand"
 	"os"
 	"time"
@@ -21,25 +23,25 @@ func RandString(n int) string {
 }
 
 type MockSource struct {
-	samples []*ctop.Sample
+	samples []*sample.Sample
 }
 
-func (m *MockSource) Collect() []*ctop.Sample {
+func (m *MockSource) Collect() []*sample.Sample {
 	if m.samples == nil {
-		m.samples = []*ctop.Sample{}
+		m.samples = []*sample.Sample{}
 		for i := 0; i < 35; i++ {
-			m.samples = append(m.samples, ctop.NewSample(RandString(10)))
+			m.samples = append(m.samples, sample.NewSample(RandString(10)))
 		}
 	}
-	samples := []*ctop.Sample{}
-	for _, sample := range m.samples {
+	samples := []*sample.Sample{}
+	for _, smpl := range m.samples {
 		/*
 			// Uncomment to change iteration size
 			if rand.Intn(10) > 5 {
 				continue
 			}
 		*/
-		s := ctop.NewSample(sample.ID())
+		s := sample.NewSample(smpl.ID())
 		s.SetFloat64("CPU", float64(rand.Intn(5)))
 		s.SetFloat64("MEM", float64(rand.Intn(40)))
 		s.SetFloat64("DISK", float64(rand.Intn(60)))
@@ -53,12 +55,12 @@ func (m *MockSource) Collect() []*ctop.Sample {
 
 func main() {
 	source := &MockSource{}
-	sections := []ctop.Section{
-		ctop.NewSamplesSection("ID", "CPU", "MEM", "DISK", "GPU", "THING", "OTHER THING"),
-		ctop.NewDebugSection(),
+	sections := []toplib.Section{
+		section.NewSamples("ID", "CPU", "MEM", "DISK", "GPU", "THING", "OTHER THING"),
+		section.NewDebug(),
 	}
 
-	top := ctop.NewTop(sections)
+	top := toplib.NewTop(sections)
 	tick := time.NewTicker(500 * time.Millisecond)
 
 	go func() {
@@ -75,7 +77,7 @@ func main() {
 		tick.Stop()
 	}()
 
-	if err := ctop.Run(top); err != nil {
+	if err := toplib.Run(top); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

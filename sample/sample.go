@@ -1,4 +1,4 @@
-package toplib
+package sample
 
 import "fmt"
 

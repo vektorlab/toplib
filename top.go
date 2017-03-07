@@ -3,70 +3,90 @@ package toplib
 import (
 	ui "github.com/gizak/termui"
 	"github.com/gizak/termui/extra"
+	"github.com/vektorlab/toplib/sample"
 )
 
-/*
-Top renders periodically updated
-samples of data in a top-like fashion.
-*/
+// Item is a selectable interface with a unique ID
+type Item interface {
+	ID() string
+}
+
+// Section returns a renderable ui.Grid
+type Section interface {
+	Name() string
+	Grid(Options) *ui.Grid
+	Handlers(Options) map[string]func(ui.Event)
+}
+
+type Options struct {
+	Recorder *Recorder
+	Render   func()
+}
+
+// Top renders Sections which are periodically updated
 type Top struct {
-	Samples  chan []*Sample // Incoming Samples
+	Samples  chan []*sample.Sample // Incoming Samples
 	Exit     chan bool
 	Recorder *Recorder // Holds samples
 	Sections []Section
 	Tabpane  *extra.Tabpane
 	Grid     *ui.Grid
-	Handlers []map[string]func(ui.Event)
 	section  int
+	Options  Options
 }
 
 func NewTop(sections []Section) *Top {
 	top := &Top{
-		Samples:  make(chan []*Sample),
+		Samples:  make(chan []*sample.Sample),
 		Exit:     make(chan bool),
 		Recorder: NewRecorder(),
 		Sections: sections,
 		Tabpane:  extra.NewTabpane(),
 		Grid:     ui.NewGrid(),
-		Handlers: []map[string]func(ui.Event){},
+	}
+	top.Options = Options{
+		Render: func() {
+			render(top)
+		},
+		Recorder: top.Recorder,
 	}
 	return top
 }
 
-func (t *Top) handlers() {
+func handlers(top *Top) {
 	ui.DefaultEvtStream.ResetHandlers()
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
-		t.Exit <- true
+		top.Exit <- true
 	})
 	ui.Handle("/sys/kbd/j", func(ui.Event) {
-		t.section = t.Tabpane.SetActiveLeft()
-		t.Render()
+		top.Tabpane.SetActiveLeft()
+		render(top)
 	})
 	ui.Handle("/sys/kbd/k", func(ui.Event) {
-		t.section = t.Tabpane.SetActiveRight()
-		t.Render()
+		top.Tabpane.SetActiveRight()
+		render(top)
 	})
-	for path, fn := range t.Sections[t.section].Handlers(t) {
+	for path, fn := range top.Sections[top.section].Handlers(top.Options) {
 		ui.Handle(path, fn)
 	}
 }
 
-func (t *Top) Render() {
-	t.handlers()
+func render(top *Top) {
+	handlers(top)
 	tabs := []extra.Tab{}
-	for _, section := range t.Sections {
-		grid := section.Grid(t)
+	for _, section := range top.Sections {
+		grid := section.Grid(top.Options)
 		grid.Width = ui.TermWidth()
 		grid.Align()
 		tab := extra.NewTab(section.Name())
 		tab.AddBlocks(grid)
 		tabs = append(tabs, *tab)
 	}
-	t.Tabpane.SetTabs(tabs...)
-	t.Tabpane.Width = ui.TermWidth()
-	t.Tabpane.Align()
+	top.Tabpane.SetTabs(tabs...)
+	top.Tabpane.Width = ui.TermWidth()
+	top.Tabpane.Align()
 	ui.Clear()
-	ui.Render(t.Tabpane)
+	ui.Render(top.Tabpane)
 }
 
 func Run(top *Top) (err error) {
@@ -77,11 +97,12 @@ func Run(top *Top) (err error) {
 	go func() {
 		for samples := range top.Samples {
 			top.Recorder.Load(samples)
-			top.Render()
+			handlers(top)
+			render(top)
 		}
 		ui.StopLoop()
 	}()
-	top.Render()
+	render(top)
 	ui.Loop()
 	return err
 }

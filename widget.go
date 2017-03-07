@@ -2,6 +2,7 @@ package toplib
 
 import (
 	ui "github.com/gizak/termui"
+	"github.com/vektorlab/toplib/toggle"
 	"strings"
 )
 
@@ -9,10 +10,10 @@ type ToggleMenu struct {
 	ui.Block
 	ToggleFgColor ui.Attribute
 	ToggleBgColor ui.Attribute
-	Toggles       Toggles
+	Toggles       toggle.Toggles
 }
 
-func NewToggleMenu(toggles Toggles) *ToggleMenu {
+func NewToggleMenu(toggles toggle.Toggles) *ToggleMenu {
 	return &ToggleMenu{
 		Toggles:       toggles,
 		ToggleFgColor: ui.ThemeAttr("list.item.fg"),
