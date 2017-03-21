@@ -4,6 +4,7 @@ import (
 	ui "github.com/gizak/termui"
 	"github.com/gizak/termui/extra"
 	"github.com/vektorlab/toplib/sample"
+	"time"
 )
 
 // Item is a selectable interface with a unique ID
@@ -25,7 +26,6 @@ type Options struct {
 
 // Top renders Sections which are periodically updated
 type Top struct {
-	Samples  chan []*sample.Sample // Incoming Samples
 	Exit     chan bool
 	Recorder *Recorder // Holds samples
 	Sections []Section
@@ -37,7 +37,6 @@ type Top struct {
 
 func NewTop(sections []Section) *Top {
 	top := &Top{
-		Samples:  make(chan []*sample.Sample),
 		Exit:     make(chan bool),
 		Recorder: NewRecorder(),
 		Sections: sections,
@@ -89,18 +88,28 @@ func render(top *Top) {
 	ui.Render(top.Tabpane)
 }
 
-func Run(top *Top) (err error) {
+func Run(top *Top, fn sample.SampleFunc) (err error) {
 	if err = ui.Init(); err != nil {
 		return err
 	}
 	defer ui.Close()
+	tick := time.NewTicker(500 * time.Millisecond)
 	go func() {
-		for samples := range top.Samples {
-			top.Recorder.Load(samples)
-			handlers(top)
-			render(top)
+		for {
+			select {
+			case <-top.Exit:
+				ui.StopLoop()
+				break
+			case <-tick.C:
+				samples, err := fn()
+				if err != nil {
+					break
+				}
+				top.Recorder.Load(samples)
+				handlers(top)
+				render(top)
+			}
 		}
-		ui.StopLoop()
 	}()
 	render(top)
 	ui.Loop()

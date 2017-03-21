@@ -26,7 +26,7 @@ type MockSource struct {
 	samples []*sample.Sample
 }
 
-func (m *MockSource) Collect() []*sample.Sample {
+func (m *MockSource) Collect() ([]*sample.Sample, error) {
 	if m.samples == nil {
 		m.samples = []*sample.Sample{}
 		for i := 0; i < 35; i++ {
@@ -50,7 +50,7 @@ func (m *MockSource) Collect() []*sample.Sample {
 		s.SetString("OTHER THING", RandString(20))
 		samples = append(samples, s)
 	}
-	return samples
+	return samples, nil
 }
 
 func main() {
@@ -60,27 +60,11 @@ func main() {
 		section.NewDebug(),
 	}
 
-	top := toplib.NewTop(sections)
-	tick := time.NewTicker(500 * time.Millisecond)
-
-	go func() {
-	loop:
-		for {
-			select {
-			case <-top.Exit:
-				close(top.Samples)
-				break loop
-			case <-tick.C:
-				top.Samples <- source.Collect()
-			}
-		}
-		tick.Stop()
-	}()
-
-	if err := toplib.Run(top); err != nil {
+	if err := toplib.Run(toplib.NewTop(sections), source.Collect); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
 }
 
 func init() {

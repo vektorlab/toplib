@@ -2,6 +2,9 @@ package sample
 
 import "fmt"
 
+// SampleFunc returns samples when invoked or an error
+type SampleFunc func() ([]*Sample, error)
+
 //Sample is a mixed-type data structure
 //containing values for displaying in ctop.
 type Sample struct {
