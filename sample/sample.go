@@ -1,27 +1,35 @@
 package sample
 
-import "fmt"
+import (
+	"fmt"
+)
+
+// Namespace represents a group of samples
+type Namespace string
 
 // SampleFunc returns samples when invoked or an error
 type SampleFunc func() ([]*Sample, error)
 
 //Sample is a mixed-type data structure
-//containing values for displaying in ctop.
+//containing values for displaying in toplib.
 type Sample struct {
-	floats  map[string]float64
-	strings map[string]string
+	floats    map[string]float64
+	strings   map[string]string
+	namespace Namespace
 }
 
-func NewSample(id string) *Sample {
+func NewSample(id string, namespace Namespace) *Sample {
 	sample := &Sample{
-		floats:  make(map[string]float64),
-		strings: make(map[string]string),
+		floats:    make(map[string]float64),
+		strings:   make(map[string]string),
+		namespace: namespace,
 	}
 	sample.SetString("ID", id)
 	return sample
 }
 
-func (s *Sample) ID() string { return s.GetString("ID") }
+func (s *Sample) ID() string           { return s.GetString("ID") }
+func (s *Sample) Namespace() Namespace { return s.namespace }
 
 func (s *Sample) SetFloat64(n string, v float64) {
 	s.floats[n] = v

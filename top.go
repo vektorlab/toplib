@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-// Item is a selectable interface with a unique ID
-type Item interface {
-	ID() string
-}
-
 // Section returns a renderable ui.Grid
 type Section interface {
 	Name() string
@@ -44,10 +39,10 @@ func NewTop(sections []Section) *Top {
 		Grid:     ui.NewGrid(),
 	}
 	top.Options = Options{
+		Recorder: top.Recorder,
 		Render: func() {
 			render(top)
 		},
-		Recorder: top.Recorder,
 	}
 	return top
 }

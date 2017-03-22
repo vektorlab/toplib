@@ -7,9 +7,9 @@ import (
 
 func TestSortSamples(t *testing.T) {
 	samples := []*Sample{
-		NewSample("S1"),
-		NewSample("S2"),
-		NewSample("S3"),
+		NewSample("S1", Namespace("")),
+		NewSample("S2", Namespace("")),
+		NewSample("S3", Namespace("")),
 	}
 	samples[0].SetFloat64("flt", float64(1.0))
 	samples[1].SetFloat64("flt", float64(2.0))

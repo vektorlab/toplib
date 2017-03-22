@@ -4,49 +4,43 @@ import (
 	ui "github.com/gizak/termui"
 	"github.com/vektorlab/toplib"
 	"github.com/vektorlab/toplib/cursor"
+	"github.com/vektorlab/toplib/sample"
 	"github.com/vektorlab/toplib/toggle"
 )
 
 type Samples struct {
-	Title    string
-	Fields   []string
-	Cursor   *cursor.Cursor
-	SortMenu *toplib.Menu
-	Toggles  toggle.Toggles
+	Namespace sample.Namespace
+	SortField string
+	Fields    []string
+	Cursor    *cursor.Cursor
+	SortMenu  *toplib.Menu
+	Toggles   toggle.Toggles
 }
 
-func NewSamples(title string, fields ...string) *Samples {
+func NewSamples(ns sample.Namespace, fields ...string) *Samples {
 	return &Samples{
-		Title:   title,
-		Fields:  fields,
-		Cursor:  cursor.NewCursor(),
-		Toggles: toggle.NewToggles(&toggle.Toggle{Name: "sort"}),
+		Namespace: ns,
+		SortField: "ID",
+		Fields:    fields,
+		Cursor:    cursor.NewCursor(),
+		Toggles:   toggle.NewToggles(&toggle.Toggle{Name: "sort"}),
 	}
 }
 
-func (d Samples) Name() string { return d.Title }
+func (s Samples) ordered(rec *toplib.Recorder) []*sample.Sample {
+	latest := rec.Latest(s.Namespace)
+	sample.Sort(s.SortField, latest)
+	return latest
+}
+
+func (d Samples) Name() string { return string(d.Namespace) }
 
 func (d Samples) Handlers(opts toplib.Options) map[string]func(ui.Event) {
-	return map[string]func(ui.Event){
-		"/sys/kbd/<up>": func(ui.Event) {
-			if d.Cursor.Up(opts.Recorder.Items()) {
-				opts.Render()
-			}
-		},
-		"/sys/kbd/<down>": func(ui.Event) {
-			if d.Cursor.Down(opts.Recorder.Items()) {
-				opts.Render()
-			}
-		},
-		"/sys/kbd/s": func(ui.Event) {
-			d.Toggles.Toggle("sort", true)
-			opts.Render()
-		},
-	}
+	return map[string]func(ui.Event){}
 }
 
 func (s Samples) Grid(opts toplib.Options) *ui.Grid {
-	samples := opts.Recorder.Samples()
+	samples := s.ordered(opts.Recorder)
 	rows := [][]string{s.Fields}
 	for _, sample := range samples {
 		rows = append(rows, sample.Strings(s.Fields))
@@ -57,7 +51,7 @@ func (s Samples) Grid(opts toplib.Options) *ui.Grid {
 	table.Border = false
 	table.SetSize()
 	table.Analysis()
-	table.BgColors[s.Cursor.IDX(opts.Recorder.Items())] = ui.ColorRed
+	//table.BgColors[s.Cursor.IDX(opts.Recorder.Items())] = ui.ColorRed
 	l := ui.NewList()
 	l.Items = s.Fields
 	l.Height = 30

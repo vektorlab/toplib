@@ -10,77 +10,57 @@ const MaxSamples = 350
 // Recorder saves recorded samples
 type Recorder struct {
 	SortField string
-	samples   map[string][]*sample.Sample
+	samples   map[sample.Namespace]map[string][]*sample.Sample
+	latest    map[sample.Namespace][]*sample.Sample
 	Counter   int
-	latest    []*sample.Sample
 	mu        sync.RWMutex
 }
 
 func NewRecorder() *Recorder {
 	return &Recorder{
 		SortField: "ID",
-		samples:   map[string][]*sample.Sample{},
-		latest:    []*sample.Sample{},
+		samples:   map[sample.Namespace]map[string][]*sample.Sample{},
 	}
 }
 
-func (r *Recorder) store(s *sample.Sample) {
-	if samples, ok := r.samples[s.ID()]; !ok {
-		r.samples[s.ID()] = []*sample.Sample{}
+func (r *Recorder) load(s *sample.Sample) {
+	id := s.ID()
+	namespace := s.Namespace()
+	if _, ok := r.samples[namespace]; !ok {
+		r.samples[namespace] = map[string][]*sample.Sample{}
+	}
+	if samples, ok := r.samples[namespace][id]; !ok {
+		r.samples[namespace][id] = []*sample.Sample{}
 	} else {
 		if len(samples) >= MaxSamples {
 			//Pop
-			r.samples[s.ID()] = samples[1:]
+			r.samples[namespace][id] = samples[1:]
 		}
 	}
-	r.samples[s.ID()] = append(r.samples[s.ID()], s)
+	r.samples[namespace][id] = append(r.samples[namespace][id], s)
 }
 
-func (r *Recorder) HistFloat64(id, field string) []float64 {
+func (r *Recorder) Latest(namespace sample.Namespace) []*sample.Sample {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	values := []float64{}
-	if samples, ok := r.samples[id]; ok {
-		for _, s := range samples {
-			values = append(values, s.GetFloat64(field))
-		}
+	if _, ok := r.latest[namespace]; !ok {
+		return nil
 	}
-	return values
-}
-
-func (r *Recorder) HistString(id, field string) []string {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	values := []string{}
-	if samples, ok := r.samples[id]; ok {
-		for _, s := range samples {
-			values = append(values, s.GetString(field))
-		}
-	}
-	return values
-}
-
-func (r *Recorder) Items() []Item {
-	items := []Item{}
-	for _, sample := range r.Samples() {
-		items = append(items, sample)
-	}
-	return items
-}
-
-func (r *Recorder) Samples() []*sample.Sample {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	sample.Sort(r.SortField, r.latest)
-	return r.latest
+	return r.latest[namespace]
 }
 
 func (r *Recorder) Load(samples []*sample.Sample) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.latest = samples
-	for _, s := range r.latest {
-		r.store(s)
+	latest := map[sample.Namespace][]*sample.Sample{}
+	for _, smpl := range samples {
+		namespace := smpl.Namespace()
+		if _, ok := latest[namespace]; !ok {
+			latest[namespace] = []*sample.Sample{}
+		}
+		latest[namespace] = append(latest[namespace], smpl)
+		r.load(smpl)
 		r.Counter++
 	}
+	r.latest = latest
 }
