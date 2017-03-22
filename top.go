@@ -22,6 +22,8 @@ type Options struct {
 // Top renders Sections which are periodically updated
 type Top struct {
 	Exit     chan bool
+	Errors   chan error
+	Samples  chan []*sample.Sample
 	Recorder *Recorder // Holds samples
 	Sections []Section
 	Tabpane  *extra.Tabpane
@@ -33,6 +35,8 @@ type Top struct {
 func NewTop(sections []Section) *Top {
 	top := &Top{
 		Exit:     make(chan bool),
+		Errors:   make(chan error),
+		Samples:  make(chan []*sample.Sample),
 		Recorder: NewRecorder(),
 		Sections: sections,
 		Tabpane:  extra.NewTabpane(),
@@ -83,23 +87,35 @@ func render(top *Top) {
 	ui.Render(top.Tabpane)
 }
 
-func Run(top *Top, fn sample.SampleFunc) (err error) {
+func Run(top *Top, funcs ...sample.SampleFunc) (err error) {
 	if err = ui.Init(); err != nil {
 		return err
 	}
 	defer ui.Close()
-	tick := time.NewTicker(500 * time.Millisecond)
+	for _, fn := range funcs {
+		go func() {
+		loop:
+			for {
+				samples, err := fn()
+				if err != nil {
+					top.Errors <- err
+					break loop
+				}
+				top.Samples <- samples
+				time.Sleep(500 * time.Millisecond)
+			}
+		}()
+	}
 	go func() {
 		for {
 			select {
+			case err = <-top.Errors:
+				ui.StopLoop()
+				break
 			case <-top.Exit:
 				ui.StopLoop()
 				break
-			case <-tick.C:
-				samples, err := fn()
-				if err != nil {
-					break
-				}
+			case samples := <-top.Samples:
 				top.Recorder.Load(samples)
 				handlers(top)
 				render(top)
