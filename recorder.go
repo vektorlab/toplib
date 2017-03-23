@@ -20,6 +20,7 @@ func NewRecorder() *Recorder {
 	return &Recorder{
 		SortField: "ID",
 		samples:   map[sample.Namespace]map[string][]*sample.Sample{},
+		latest:    map[sample.Namespace][]*sample.Sample{},
 	}
 }
 
@@ -49,18 +50,15 @@ func (r *Recorder) Latest(namespace sample.Namespace) []*sample.Sample {
 	return r.latest[namespace]
 }
 
-func (r *Recorder) Load(samples []*sample.Sample) {
+func (r *Recorder) Load(namespace sample.Namespace, samples []*sample.Sample) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	latest := map[sample.Namespace][]*sample.Sample{}
-	for _, smpl := range samples {
-		namespace := smpl.Namespace()
-		if _, ok := latest[namespace]; !ok {
-			latest[namespace] = []*sample.Sample{}
-		}
-		latest[namespace] = append(latest[namespace], smpl)
-		r.load(smpl)
+	if _, ok := r.latest[namespace]; !ok {
+		r.latest[namespace] = []*sample.Sample{}
+	}
+	r.latest[namespace] = samples
+	for _, s := range samples {
+		r.load(s)
 		r.Counter++
 	}
-	r.latest = latest
 }
