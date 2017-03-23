@@ -5,6 +5,7 @@ import (
 	ui "github.com/gizak/termui"
 	"github.com/vektorlab/toplib"
 	"github.com/vektorlab/toplib/sample"
+	"runtime"
 	"sort"
 )
 
@@ -21,7 +22,8 @@ func (d Debug) Handlers(opts toplib.Options) map[string]func(ui.Event) {
 }
 
 func (d *Debug) Grid(opts toplib.Options) *ui.Grid {
-	p := ui.NewPar(fmt.Sprintf("Samples Loaded: %d", opts.Recorder.Counter))
+	p := ui.NewPar(fmt.Sprintf("Samples Loaded: %d, Go Routines: %d",
+		opts.Recorder.Counter, runtime.NumGoroutine()))
 	p.Height = 3
 	p.Width = 10
 	l := ui.NewList()
