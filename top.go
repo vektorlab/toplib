@@ -87,25 +87,29 @@ func render(top *Top) {
 	ui.Render(top.Tabpane)
 }
 
+func collect(top *Top, fn sample.SampleFunc) {
+	for {
+		samples, err := fn()
+		if err != nil {
+			top.Errors <- err
+			return
+		}
+		top.Samples <- samples
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 func Run(top *Top, funcs ...sample.SampleFunc) (err error) {
 	if err = ui.Init(); err != nil {
 		return err
 	}
+
 	defer ui.Close()
+
 	for _, fn := range funcs {
-		go func() {
-		loop:
-			for {
-				samples, err := fn()
-				if err != nil {
-					top.Errors <- err
-					break loop
-				}
-				top.Samples <- samples
-				time.Sleep(500 * time.Millisecond)
-			}
-		}()
+		go collect(top, fn)
 	}
+
 	go func() {
 		for {
 			select {
@@ -116,9 +120,11 @@ func Run(top *Top, funcs ...sample.SampleFunc) (err error) {
 				ui.StopLoop()
 				break
 			case samples := <-top.Samples:
-				top.Recorder.Load(samples)
-				handlers(top)
-				render(top)
+				if len(samples) > 0 {
+					top.Recorder.Load(samples[0].Namespace(), samples)
+					handlers(top)
+					render(top)
+				}
 			}
 		}
 	}()
